@@ -41,7 +41,7 @@ app.get('/ping', function(_req,res){
 
 app.get('/_buildinfo', function(_req, res){
   res.send({
-    buildinfo: fs.readFileSync(path.join(__dirname,"../BUILDINFO")).toString()
+    buildinfo: fs.readFileSync(path.join(__dirname,"../BUILDINFO")).toString().trim()
   })
 })
 app.use('/api/user', require('./api/user.js'));

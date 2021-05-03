@@ -8,7 +8,7 @@ steps:
     - |
       # save the commit sha & build date
       NOW=$(date +"%Y-%m-%d %T")
-      echo $BRANCH_NAME $SHORT_SHA $NOW > BUILDINFO
+      echo $BRANCH_NAME $SHORT_SHA $$NOW > BUILDINFO
 # step 1 build the container image
 - name: 'gcr.io/cloud-builders/docker'
   args: [
