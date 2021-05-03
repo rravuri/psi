@@ -14,9 +14,10 @@ steps:
   args: [
     'build', 
     '-t', 'gcr.io/$PROJECT_ID/psi:$SHORT_SHA', 
+    '-t', 'gcr.io/$PROJECT_ID/psi:latest', 
     '--build-arg','COMMITSHA=$COMMIT_SHA',
     '--build-arg','SHORTSHA=$SHORT_SHA',
     '.']
-# step2 push the container image to Container Registry
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/psi:$SHORT_SHA']
+images:
+- gcr.io/$PROJECT_ID/psi:$SHORT_SHA
+- gcr.io/$PROJECT_ID/psi:latest
