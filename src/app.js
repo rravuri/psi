@@ -29,7 +29,7 @@ app.disable('x-powered-by');
 app.use(express.json()); // for parsing application/json
 app.use(express.urlencoded({ extended: true }));
 
-app.use(express.static(path.join(__dirname, '../build')));
+app.use(express.static(path.join(__dirname, '../ui/build')));
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/ping', function(_req,res){

@@ -17,7 +17,10 @@ WORKDIR /usr/src/app
 COPY --chown=node:node --from=build /usr/src/app/node_modules /usr/src/app/node_modules
 COPY --chown=node:node --from=uibuild /usr/src/app/ui/node_modules /usr/src/app/ui/node_modules
 COPY --chown=node:node . /usr/src/app
+
 RUN npm run build
 ENV NODE_ENV production
+ARG COMMITSHA=latest
+ARG SHORTSHA=last
 EXPOSE 8080
 CMD ["dumb-init", "npm", "start" ]

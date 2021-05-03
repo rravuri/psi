@@ -9,7 +9,7 @@
     "test": "NODE_ENV=test LOG_LEVEL=error nyc --reporter=html --reporter=text mocha --exit -r dotenv/config --require should --reporter spec --timeout 10000",
     "test:watch": "npm test -- --watch",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "build": "cd ui && npm run build && cp -r build ../"
+    "build": "cd ui && npm run build"
   },
   "mocha": {
     "file": [
@@ -18,14 +18,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/UnknownInc/psi.git"
+    "url": "git+https://github.com/rravuri/psi.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/UnknownInc/psi/issues"
+    "url": "https://github.com/rravuri/psi/issues"
   },
-  "homepage": "https://github.com/UnknownInc/psi#readme",
+  "homepage": "https://github.com/rravuri/psi#readme",
   "dependencies": {
     "cookie-parser": "1.4.5",
     "cookie-session": "^1.4.0",
