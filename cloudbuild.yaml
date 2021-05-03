@@ -1,13 +1,14 @@
 steps:
 # step 0 pull prev image for caching
-- name: 'gcr.io/cloud-builders/docker'
-  entrypoint: 'bash'
-  args:
-  - '-c'
-  - |
-    docker pull gcr.io/$PROJECT_ID/psi:$SHORT_SHA || exit 0
+# - name: 'gcr.io/cloud-builders/docker'
+#   entrypoint: 'bash'
+#   args:
+#   - '-c'
+#   - |
+#     docker pull gcr.io/$PROJECT_ID/psi:$SHORT_SHA || exit 0
 #  - name: gcr.io/cloud-builders/gsutil
 #    args: ['rsync', '-r', 'gs://my-cache-bucket/repository', '/workspace/.nmcache']
+#    '--cache-from', 'gcr.io/$PROJECT_ID/psi:$SHORT_SHA',
 # step1 build the container image
 - name: 'gcr.io/cloud-builders/docker'
   args: [
@@ -15,7 +16,6 @@ steps:
     '-t', 'gcr.io/$PROJECT_ID/psi:$SHORT_SHA', 
     '--buld-arg','COMMITSHA=$COMMIT_SHA',
     '--buld-arg','SHORTSHA=$SHORT_SHA',
-    '--cache-from', 'gcr.io/$PROJECT_ID/psi:$SHORT_SHA',
     '.']
 # step2 push the container image to Container Registry
 - name: 'gcr.io/cloud-builders/docker'
