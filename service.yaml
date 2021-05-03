@@ -3,9 +3,9 @@ kind: Service
 metadata:
   name: psi-service
 spec:
-  type: LoadBalancer
+  type: NodePort
   ports:
     - port: 8080
-      targetPort: 5000
+      targetPort: 8080
   selector:
     app: psi

@@ -21,7 +21,7 @@ spec:
       - name: psi
         image: gcr.io/PROJECT_ID/IMAGE:TAG
         ports:
-        - containerPort: 5000
+        - containerPort: 8080
         resources:
           requests:
             cpu: 100m
