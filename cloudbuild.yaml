@@ -1,5 +1,14 @@
 steps:
-# step0 build the container image
+# step 0 store buil info
+- id: "Store Values"
+  name: ubuntu
+  entrypoint: bash
+  args:
+    - -c
+    - |
+      # save the commit sha & build date
+      echo $SHORT_SHA > BUILDINFO
+# step 1 build the container image
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
@@ -9,10 +18,10 @@ steps:
     '--build-arg','SHORTSHA=$SHORT_SHA',
     '--cache-from', 'gcr.io/$PROJECT_ID/psi:latest',
     '.']
-# step1 push container image
+# step 2 push container image
 - name: "gcr.io/cloud-builders/docker"
   args: ["push", "gcr.io/$PROJECT_ID/psi:$SHORT_SHA"]
-# step 2 deploy container image to GKE
+# step 3 deploy container image to GKE
 - name: "gcr.io/cloud-builders/kubectl"
   args: ['set', 'image', 'deployment/psi', 'psi=gcr.io/$PROJECT_ID/psi:$SHORT_SHA']
   env:

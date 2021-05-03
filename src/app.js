@@ -1,5 +1,6 @@
 const session = require('cookie-session');
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const app = express();
 const morgan = require('morgan');
@@ -8,6 +9,8 @@ const cookieParser = require('cookie-parser')
 app.config = require('./config.js'); 
 app.use(cookieParser(app.config.cookieSecret));
 const logger = require('./logger.js');
+const { fileURLToPath } = require('url');
+const { fstat } = require('fs');
 
 //using the logger and its configured transports, to save the logs created by Morgan
 const logStream = {
@@ -36,6 +39,11 @@ app.get('/ping', function(_req,res){
     res.status(200).send('pong');
 })
 
+app.get('/_buildinfo', function(_req, res){
+  res.send({
+    buildinfo: fs.readFileSync(path.join(__dirname,"../BUILDINFO")).toString()
+  })
+})
 app.use('/api/user', require('./api/user.js'));
 app.use('/api/phone', require('./api/phonenumbers.js'));
 app.use(require('./openapi'));
