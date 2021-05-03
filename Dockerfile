@@ -6,7 +6,7 @@ RUN npm ci --only=production
 
 FROM node:14-alpine as uibuild
 WORKDIR /usr/src/app/ui
-COPY package*.json /usr/src/app/ui/
+COPY ui/package*.json /usr/src/app/ui/
 RUN npm install
 
 # run image
