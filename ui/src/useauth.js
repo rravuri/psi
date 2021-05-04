@@ -21,14 +21,14 @@ export const useAuth = () => {
   return useContext(authContext);
 };
 
-function getCookie(key) {
-  var b = document.cookie.match("(^|;)\\s*" + key + "\\s*=\\s*([^;]+)");
-  return b ? b.pop() : "";
-}
-
+// function getCookie(key) {
+//   var b = document.cookie.match("(^|;)\\s*" + key + "\\s*=\\s*([^;]+)");
+//   return b ? b.pop() : "";
+// }
 
 function useProvideAuth() {
-  const [lastlc, setLastLc] = useState(null);
+  const [checking, setChecking] = useState(true);
+  const [lastlc, setLastLc] = useState('');
   const [user, setUser] = useState(null);
 
   const signin = () => {
@@ -44,24 +44,22 @@ function useProvideAuth() {
   // ... latest auth object.
   useEffect(() => {
     const iHandle = setInterval(()=>{
-      let lc= getCookie('lc');
-      if (lc===''){
-        lc=window.localStorage.getItem('lc')||'';
-      }
+      let lc=window.localStorage.getItem('lc')||'';
 
-      if (lc!=='' && lastlc!==lc) {
+      if (lc!==lastlc) {
+        setChecking(true);
+        setLastLc(lc);
         axios.defaults.headers.common['Authorization']='Bearer '+lc;
         axios.get('/api/user')
           .then(res=>{
-            window.localStorage.setItem('lc', lc);
-            setLastLc(lc);
             setUser(res.data);
           })
           .catch(err=>{
             console.error(err);
           })
+      } else {
+        setChecking(false);
       }
-
     }, 1000);
     // Cleanup subscription on unmount
     return () => {
@@ -70,6 +68,7 @@ function useProvideAuth() {
   });
 
   return {
+    checking,
     signin,
     signout,
     user

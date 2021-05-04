@@ -12,11 +12,11 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import TextField from '@material-ui/core/TextField';
 import Box from '@material-ui/core/Box';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import Fade from '@material-ui/core/Fade';
 
 import MuiAlert from '@material-ui/lab/Alert';
 
@@ -48,6 +48,26 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+function TimedRedirect({children, delay, to, ...otherProps}) {
+  const [redirectTimer, setRTimer] = useState(delay);
+  useEffect(()=>{
+    let rthandle = setInterval(()=>{
+      if (redirectTimer>0) {
+        setRTimer(redirectTimer-1);
+      } else {
+        clearInterval(rthandle);
+      }
+    }, 1000)
+    return ()=>{clearInterval(rthandle);}
+  });
+  return redirectTimer<=0?<Redirect to={to} {...otherProps}/>:<div>
+    {children}
+    <Typography variant='subtitle'>
+      {`redirecting in ${redirectTimer} seconds...`}
+    </Typography>
+  </div>
+}
+
 function Verify() {
   let location = useLocation();
   const [isBusy, setBusy] = useState(true);
@@ -64,6 +84,7 @@ function Verify() {
     .then(res=>{
       let token = res.data.jwt;
       window.localStorage.setItem('lc', token);
+      console.log('verified the token.')
       setCompleted(true);
       setBusy(false);
     })
@@ -112,7 +133,19 @@ function Verify() {
 
   if (completed) {
     return (
-      <Redirect push to='/'/>
+      <TimedRedirect push to='/' delay={3}>
+        <Container component="main" maxWidth="xs">
+          <CssBaseline />
+          <div className={classes.paper}>
+            <Avatar className={classes.avatar}>
+              <CheckCircleIcon />
+            </Avatar>
+            <Typography component="h1" variant="h5">
+              Successfully verified the email.
+            </Typography>
+          </div>
+        </Container>
+      </TimedRedirect>
     )
   }
 

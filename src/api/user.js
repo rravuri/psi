@@ -100,7 +100,7 @@ user.post('/register', async function(req, res){
 
   //send mail
   try {
-    const tokenUrl = `${req.protocol}://${req.get('host')}/verify?token=${token}`;
+    const tokenUrl = `https://${req.get('host')}/verify?token=${token}`;
     const msg = {
       to: email,
       from: `"psnext.info" <${process.env.MAIL_FROM}>`,
