@@ -49,7 +49,7 @@ app.use('/api/phone', require('./api/phonenumbers.js'));
 app.use(require('./openapi'));
 
 app.get('/*', function (req, res) {
-  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+  res.sendFile(path.join(__dirname, '../ui/build', 'index.html'));
 });
 
 module.exports = app;
