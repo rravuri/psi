@@ -53,6 +53,7 @@ function useProvideAuth() {
         axios.defaults.headers.common['Authorization']='Bearer '+lc;
         axios.get('/api/user')
           .then(res=>{
+            window.localStorage.setItem('lc', lc);
             setLastLc(lc);
             setUser(res.data);
           })
