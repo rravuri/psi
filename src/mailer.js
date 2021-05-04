@@ -28,4 +28,4 @@ if (process.env.NODE_ENV==='test') {
   mailer = nodemailer.createTransport(credentials);
 }
 
-module.exports = nodemailer;
+module.exports = mailer;
