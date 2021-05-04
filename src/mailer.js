@@ -16,13 +16,13 @@ if (process.env.NODE_ENV==='test') {
   // The credentials for the email account you want to send mail from.
   const credentials = {
     service: 'gmail',
+    host: 'smtp.gmail.com',
     auth: {
       // These environment variables will be pulled from the env
       user: (process.env.MAIL_USER || '').trim(),
       pass: (process.env.MAIL_PASS || '').trim(),
     },
   };
-
   // setup Nodemailer with the credentials for when the 'sendEmail()'
   // function is called.
   mailer = nodemailer.createTransport(credentials);
