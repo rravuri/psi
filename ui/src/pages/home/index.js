@@ -10,7 +10,6 @@ import Box from '@material-ui/core/Box';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import Typography from '@material-ui/core/Typography';
-import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Tabs from '@material-ui/core/Tabs';
@@ -18,6 +17,7 @@ import Tab from '@material-ui/core/Tab';
 import Paper from '@material-ui/core/Paper';
 import CityDropdown from '../../components/citydropdown';
 import OpenRequests from './openrequests';
+import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -58,8 +58,8 @@ function TabPanel(props) {
       {...other}
     >
       {value === index && (
-        <Box p={3}>
-          <Typography>{children}</Typography>
+        <Box p={0}>
+          {children}
         </Box>
       )}
     </div>
@@ -85,9 +85,9 @@ function Home() {
   <Container component="main">
     <CssBaseline />
     <div className={classes.paper}>
-      <Typography component='h1' variant='h5'>PS4U</Typography>
-      <Typography variant='title'>Covid-19 support portal</Typography>
-      <CityDropdown cityValue={city} onChange={setCity}/>
+      <Typography component='h1' variant='h5' gutterBottom>PS4U</Typography>
+      <Typography variant='h6' gutterBottom>Covid-19 support portal</Typography>
+      <CityDropdown cityValue={city} onChange={c=>{setCity(c);}} width={'50ch'}/>
       <AppBar position="static" color="transparent" elevation={0}>
         <Tabs
           value={selectedTab}
@@ -110,25 +110,25 @@ function Home() {
         <OpenRequests city={city}/>
       </TabPanel>
       <TabPanel value={selectedTab} index={1} className={classes.tabpanel}>
-        <Typography variant='title'>Oxygen Information</Typography>
+        <p>Oxygen Information</p>
 
       </TabPanel>
       <TabPanel value={selectedTab} index={2} className={classes.tabpanel}>
-        <Typography variant='title'>Beds Information</Typography>
+        <p>Beds Information</p>
 
       </TabPanel>
       <TabPanel value={selectedTab} index={3} className={classes.tabpanel}>
-        <Typography variant='title'>Plasma Information</Typography>
+        <p>Plasma Information</p>
 
       </TabPanel>
       <TabPanel value={selectedTab} index={4} className={classes.tabpanel}>
         <Paper>
-          <Typography variant='title'>Medicines Information</Typography>
+          <p>Medicines Information</p>
         </Paper>
       </TabPanel>
       <TabPanel value={selectedTab} index={5} className={classes.tabpanel}>
         <Paper>
-          <Typography variant='title'>Food Information</Typography>
+          <p>Food Information</p>
         </Paper>
       </TabPanel>
     </div>

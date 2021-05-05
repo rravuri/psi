@@ -75,17 +75,20 @@ const request = express.Router();
  */
 request.post('/', requireUser, async function(req, res){
   const {log, db}=req.app;
-  let {from, description, city, category} = req.body||{};
+  let {from, description, city, category, status='open', needByTime, contactNumber} = req.body||{};
   let fromid=req.userid;
   try {
     let requestsRef=db().collection('/psnext_requests');
+    const ts=db.FieldValue.serverTimestamp();
     const result = await requestsRef.add({
-      from, fromid, city, description, city, category,
-      created_at: db.FieldValue.serverTimestamp()
+      from, fromid, city, description, city, category, status,
+      needByTime, contactNumber,
+      createdAt: ts
     });
     log.debug(`Added request with ID: ${result.id}`);
     const snapshot = await result.get();
     const data = snapshot.data();
+    // data.createdAt=(new db.Timestamp(data.createdAt.seconds, data.createdAt.nanoseconds)).toDate();
     delete data.fromid;
     return res.json(data);
   } catch(ex) {
@@ -133,8 +136,33 @@ request.post('/', requireUser, async function(req, res){
  *       - JWTAuth: []
  */
  request.get('/', requireUser, async (req, res)=>{
-  const {log} = req.app;
+  const {db, log} = req.app;
+  let status = req.query.status||'';
+  let limit = parseInt(req.query.limit || '100');
+  let offset = parseInt(req.query.offset||'0');
   let requests = [];
+  log.debug(`limit:${limit}, offset:${offset}, status:${status}`);
+  try {
+    const requestsRef=db().collection('/psnext_requests')
+    let query = await requestsRef.orderBy('createdAt', 'desc');
+    if (offset>0) {
+      query = query.startAfter(new db.Timestamp(offset,0))
+      // query = query.startAfter(offset);
+    }
+    const snapshot = await query.limit(limit).get();
+    snapshot.forEach(doc => {
+      let r=doc.data();
+      if (status==='' || r.status==status) {
+        // r.createdAt=(new db.Timestamp(r.createdAt.seconds, r.createdAt.nanoseconds)).toDate();
+        delete r.fromid;
+        r.id=doc.id;
+        requests.push(r);
+      }
+    });
+  } catch(ex) {
+    log.error('Unable to get request', ex);
+    return res.status(500).send();
+  }
   return res.json(requests);
 });
 
