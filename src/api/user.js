@@ -80,7 +80,7 @@ user.post('/register', async function(req, res){
         email: email,
         created_at: db.FieldValue.serverTimestamp()
       });
-      console.log('Added user with ID: ', result.id);
+      log.debug('Added user with ID: ', result.id);
       snapshot = await usersRef.where("email","==",email).limit(1).get();
     }
 
