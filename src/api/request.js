@@ -75,16 +75,22 @@ const request = express.Router();
  */
 request.post('/', requireUser, async function(req, res){
   const {log, db}=req.app;
-  let {from, description, city, category, status='open', needByTime, contactNumber} = req.body||{};
+  let {from, description, city=null, category='info', status='open', 
+    needByTime=null, contactNumber=null, requestedFor='self', replyTo='', assignedTo=''} = req.body||{};
   let fromid=req.userid;
   try {
     let requestsRef=db().collection('/psnext_requests');
     const ts=db.FieldValue.serverTimestamp();
     const result = await requestsRef.add({
       from, fromid, city, description, city, category, status,
-      needByTime, contactNumber,
-      createdAt: ts
+      needByTime, contactNumber, requestedFor, replyTo, replyCount:0,
+      createdAt: ts, assignedTo,
     });
+    if (replyTo) {
+      requestsRef.doc(replyTo).update({
+        replyCount: db.FieldValue.increment(1)
+      })
+    }
     log.debug(`Added request with ID: ${result.id}`);
     const snapshot = await result.get();
     const data = snapshot.data();
@@ -137,14 +143,36 @@ request.post('/', requireUser, async function(req, res){
  */
  request.get('/', requireUser, async (req, res)=>{
   const {db, log} = req.app;
-  let status = req.query.status||'';
-  let limit = parseInt(req.query.limit || '100');
-  let offset = parseInt(req.query.offset||'0');
-  let requests = [];
-  log.debug(`limit:${limit}, offset:${offset}, status:${status}`);
+  const {from, city, status, category, parent }= req.query;
+
+  const limit = parseInt(req.query.limit || '100');
+  const offset = parseInt(req.query.offset||'0');
+
+  const requests = [];
   try {
-    const requestsRef=db().collection('/psnext_requests')
-    let query = await requestsRef.orderBy('createdAt', 'desc');
+    const requestsRef=db().collection('/psnext_requests');
+
+    let query=requestsRef;
+    if (status) {
+      query=query.where('status','==',status);
+    }
+    if (city) {
+      query=query.where('city','==', city);
+    }
+    if (category) {
+      query=query.where('category','==', category);
+    }
+    if (parent) {
+      query = query.where('replyTo','==', parent)
+    } else {
+      query = query.where('replyTo','==', '')
+    }
+
+    if (from) {
+      query = query.where('from', "==", from);
+    }
+
+    query=query.orderBy('createdAt', 'desc');
     if (offset>0) {
       query = query.startAfter(new db.Timestamp(offset,0))
       // query = query.startAfter(offset);
@@ -152,12 +180,10 @@ request.post('/', requireUser, async function(req, res){
     const snapshot = await query.limit(limit).get();
     snapshot.forEach(doc => {
       let r=doc.data();
-      if (status==='' || r.status==status) {
-        // r.createdAt=(new db.Timestamp(r.createdAt.seconds, r.createdAt.nanoseconds)).toDate();
-        delete r.fromid;
-        r.id=doc.id;
-        requests.push(r);
-      }
+      // r.createdAt=(new db.Timestamp(r.createdAt.seconds, r.createdAt.nanoseconds)).toDate();
+      delete r.fromid;
+      r.id=doc.id;
+      requests.push(r);
     });
   } catch(ex) {
     log.error('Unable to get request', ex);

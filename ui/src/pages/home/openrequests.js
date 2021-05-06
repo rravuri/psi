@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { AppBar, Avatar, Backdrop, Badge, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Grow, IconButton, InputBase, ListItemIcon, ListItemSecondaryAction, TextField, Toolbar, Typography } from "@material-ui/core";
+import { AppBar, Avatar, Backdrop, Badge, Button, ButtonGroup, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Grow, IconButton, InputBase, Link, ListItemIcon, ListItemSecondaryAction, TextField, Toolbar, Tooltip, Typography } from "@material-ui/core";
 import CityDropdown from "../../components/citydropdown";
 import { useAuth } from "../../useauth";
 import useScrollTrigger from '@material-ui/core/useScrollTrigger';
@@ -12,9 +12,11 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
 import SearchIcon from '@material-ui/icons/Search';
-import CommentIcon from '@material-ui/icons/Comment';
+import PersonAddIcon from '@material-ui/icons/PersonAdd';
+import PersonIcon from '@material-ui/icons/Person';
 import ArrowRightIcon from '@material-ui/icons/ArrowRight';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import ReplyIcon from '@material-ui/icons/Reply';
 import NoteAddIcon from '@material-ui/icons/NoteAdd';
 import List from '@material-ui/core/List';
@@ -25,6 +27,8 @@ import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import { fade, makeStyles } from '@material-ui/core/styles';
 import { DateTimePicker } from '@material-ui/pickers'
 import { format, formatDistance} from 'date-fns';
+
+import SplitButton from '../../components/splitbutton';
 
 const useStyles = makeStyles((theme) => ({
   grow: {
@@ -70,39 +74,38 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.up('md')]: {
       width: '20ch',
     },
-    sectionDesktop: {
-      display: 'none',
-      [theme.breakpoints.up('md')]: {
-        display: 'flex',
-      },
-    },
-    sectionMobile: {
+  },
+  sectionDesktop: {
+    display: 'none',
+    [theme.breakpoints.up('xs')]: {
       display: 'flex',
-      [theme.breakpoints.up('md')]: {
-        display: 'none',
-      },
-    }
-    ,backdrop: {
-      zIndex: theme.zIndex.drawer + 1,
-      color: '#fff',
     },
   },
+  sectionMobile: {
+    display: 'flex',
+    [theme.breakpoints.up('xs')]: {
+      display: 'none',
+    },
+  }
+  ,backdrop: {
+    zIndex: theme.zIndex.drawer + 1,
+    color: '#fff',
+  },
+  listIcon:{
+    width: theme.spacing(3),
+    height: theme.spacing(3),
+  },
+  itemactions:{
+    display:'flex', flexDirection:'row', 
+    float:"right",
+    paddingLeft: theme.spacing(1)
+  },
+  replyList: {
+    width: '100%',
+    paddingLeft: theme.spacing(8),
+    backgroundColor: theme.palette.background.default,
+  }
 }));
-
-function ElevationScroll(props) {
-  const { children, window } = props;
-  // Note that you normally won't need to set the window ref as useScrollTrigger
-  // will default to window.
-  // This is only being set here because the demo is in an iframe.
-  const trigger = useScrollTrigger({
-    disableHysteresis: true,
-    threshold: 0,
-  });
-
-  return React.cloneElement(children, {
-    elevation: trigger ? 4 : 0,
-  });
-}
 
 export default function OpenRequests({city}) {
   const auth = useAuth();
@@ -112,10 +115,14 @@ export default function OpenRequests({city}) {
   const [desc, setDesc] = useState(null);
   const [nbtime, setNBTime] = useState(null);
   const [contactNumber, setContactNumber] = useState(null);
+  const [requestedFor, setRequestedFor] = useState('self');
+  const [replydesc, setReplyDesc] = useState(null);
+  const [currentReq, setCurrentReq] = useState(null);
   const [error, setError] = useState(null);
 
   const [isBusy, setBusy] = useState(false);
   const [openNewDialog, setOpenNewDialog] = useState(false);
+  const [openNewReplyDialog, setNewReplyDialog] = useState(false);
   const [requests, setRequests] =useState([]);
   const classes = useStyles();
 
@@ -131,8 +138,39 @@ export default function OpenRequests({city}) {
       })
   },[city])
 
+  const handleRequestedForCheck = (e)=>{
+    setRequestedFor(e.target.checked?'self':'others');
+  }
   const handleCategoryChange = (e)=>{
     setCategory(e.target.value);
+  }
+
+  const handleReplyDiaglogClose = ()=>{
+    setNewReplyDialog(false);
+  }
+
+  const handleSubmitNewReply = (e)=>{
+    e.preventDefault();
+    try{
+      setBusy(true);
+      axios.post('/api/request',{
+        from: auth.user.email,
+        replyTo: currentReq?currentReq.id:null,
+        description: replydesc,
+      }).then((res) =>{
+        currentReq.replies=[res.data, ...(currentReq.replies||[])]
+        // setRequests([res.data, ...requests]);
+        setNewReplyDialog(false);
+        setError(null);
+        setBusy(false);
+      }).catch(err=>{
+        console.log(err);
+        setError('Unable to add request.')
+      })
+    } catch (ex) {
+      console.error(ex);
+      setBusy(false);
+    }
   }
 
   const handleNewDiaglogClose = ()=>{
@@ -161,77 +199,79 @@ export default function OpenRequests({city}) {
       })
     } catch (ex) {
       console.error(ex);
+      setBusy(false);
     }
   }
 
   return <div>
-    <AppBar position="static">
-      <Toolbar variant="dense">
-          <div className={classes.search}>
-            <div className={classes.searchIcon}>
-              <SearchIcon />
-            </div>
-            <InputBase
-              placeholder="Search…"
-              classes={{
-                root: classes.inputRoot,
-                input: classes.inputInput,
-              }}
-              inputProps={{ 'aria-label': 'search' }}
-            />
-          </div>
-          <div className={classes.grow} />
-          <div className={classes.sectionDesktop}>
-            <IconButton aria-label="add ne request" color="inherit" onClick={()=>setOpenNewDialog(true)} >
-              <NoteAddIcon />
-            </IconButton>
-          </div>
-      </Toolbar>
-    </AppBar>
     <Container>
+      <AppBar position="static">
+        <Toolbar variant="dense">
+            {/* <div className={classes.search}>
+              <div className={classes.searchIcon}>
+                <SearchIcon />
+              </div>
+              <InputBase
+                placeholder="Search…"
+                classes={{
+                  root: classes.inputRoot,
+                  input: classes.inputInput,
+                }}
+                inputProps={{ 'aria-label': 'search' }}
+              />
+            </div> */}
+            <div className={classes.grow} />
+            <div className={classes.sectionDesktop}>
+              <Tooltip title="Add new request" >
+                <IconButton aria-label="add new request" color="inherit" onClick={()=>setOpenNewDialog(true)} >
+                  <NoteAddIcon />
+                </IconButton>
+              </Tooltip>
+            </div>
+        </Toolbar>
+      </AppBar>
       <Box component="div">
         <List className={classes.list}>
-          {requests.map((r,i)=>{return <React.Fragment key={r.id}>
-          <ListItem alignItems="flex-start">
-            <ListItemIcon>
-              <Checkbox
-                edge="start"
-                icon={<ArrowRightIcon/>}
-                checkedIcon={<ArrowDropDownIcon/>}
-              />
-            </ListItemIcon>
-            <ListItemAvatar>
-              <Badge badgeContent={r.replyCount} max={10} color="secondary" >
-                <Avatar alt="r.category">{r.category[0].toUpperCase()+''}</Avatar>
-              </Badge> 
-            </ListItemAvatar>
-            <ListItemText
-              primary={r.description}
-              secondary={
-                <React.Fragment>
-                  <Typography
-                    component="span"
-                    variant="body2"
-                    className={classes.inline}
-                    color="textPrimary"
-                  >
-                    {formatDistance(new Date(r.createdAt["_seconds"]*1000), new Date(), {addSuffix: true})}
-                  </Typography>
-                  &nbsp;&nbsp;{`${r.from}, ${r.city}`}
-                </React.Fragment>
-              }
-            />
-            <ListItemSecondaryAction>
-              <IconButton edge="end" aria-label="reply">
-                <ReplyIcon />
-              </IconButton>
-            </ListItemSecondaryAction>
-          </ListItem>
-          <Divider variant="inset" component="li" />
-          </React.Fragment>;})}
+          {requests.map((r)=>{return <RequestItem  key={r.id} request={r} 
+            setCurrentReq={setCurrentReq} setNewReplyDialog={setNewReplyDialog}/>;
+            })
+          }
         </List>
       </Box>
     </Container>
+    <Dialog open={openNewReplyDialog} onClose={handleReplyDiaglogClose} aria-labelledby="form-replydialog-title">
+      <form onSubmit={handleSubmitNewReply}>
+        <DialogTitle id="form-replydialog-title">Add a new request</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Do you have a reply for this request? Please, add it!
+          </DialogContentText>
+          <Grid container spacing={1}>
+            <Grid item xs={12}>
+              <TextField
+                id="rdescrip"
+                label="Reply"
+                multiline
+                rows={4}
+                placeholder="Reply message..."
+                variant="outlined" 
+                fullWidth
+                value={replydesc}
+                onChange={(event) => setReplyDesc(event.target.value)}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleNewDiaglogClose} color="primary">
+            Cancel
+          </Button>
+          <Button type="submit" color="primary">
+            Add
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
     <Dialog open={openNewDialog} onClose={handleNewDiaglogClose} aria-labelledby="form-dialog-title">
         <form onSubmit={handleSubmitNewRequest}>
           <DialogTitle id="form-dialog-title">Add a new request</DialogTitle>
@@ -276,14 +316,19 @@ export default function OpenRequests({city}) {
                   label="Description"
                   multiline
                   rows={4}
-                  defaultValue="Request Description..."
+                  placeholder="Request Description..."
                   variant="outlined" 
                   fullWidth
                   value={desc}
                   onChange={(event) => setDesc(event.target.value)}
                 />
               </Grid>
-              <Grid item xs={6}></Grid>
+              <Grid item xs={6}> 
+                <FormControlLabel
+                  control={<Checkbox color="primary" checked={requestedFor==='self'} onChange={handleRequestedForCheck} />}
+                  label="For Self?"
+                />
+              </Grid>
               <Grid item xs={6}>
                 <DateTimePicker 
                   autoOk
@@ -310,4 +355,112 @@ export default function OpenRequests({city}) {
         <CircularProgress color="inherit" />
       </Backdrop>
   </div>
+}
+
+function RequestItem({request, setCurrentReq, setNewReplyDialog}) {
+  const classes = useStyles();
+  const [r, setcr] = useState(null);
+  const [isBusy, setBusy] = useState(false);
+  useEffect(()=>{
+    let cr=Object.assign({}, request);
+    if (!cr.replies) {
+      cr.replies=[];
+      cr.showReplies=false;
+    }
+    setcr(cr);
+  },[request]);
+
+  const handleShowReplies = (e)=>{
+    if (e.target.checked) {
+      setBusy(true);
+      axios.get(`/api/request?parent=${r.id}`)
+        .then(res=>{
+          const cr=Object.assign({}, r)
+          cr.replies=[...res.data];
+          cr.showReplies=true;
+          setcr(cr);
+          setBusy(false);
+        })
+        .catch(err=>{
+          console.log(err);
+          setBusy(false);
+        })
+    } else {
+      r.showReplies = false;
+      setcr(Object.assign({}, r));
+    }
+  }
+  if (r===null) return null;
+  return <React.Fragment>
+    <ListItem alignItems="flex-start">
+      <ListItemIcon>
+        <Badge badgeContent={r.replyCount} max={10} color="secondary">
+        {isBusy?<CircularProgress />:<Checkbox
+          edge="start"
+          icon={<ArrowRightIcon />}
+          checkedIcon={<ArrowDropDownIcon />}
+          checked={r.showReplies}
+          onChange={handleShowReplies} />}
+        </Badge>
+      </ListItemIcon>
+      <ListItemText
+        primary={<React.Fragment>
+          <Typography
+            component="span"
+            variant="body1"
+            className={classes.inline}
+            color="textPrimary">
+            <Badge><Avatar alt="r.category" className={classes.listIcon}>{r.category[0].toUpperCase() + ''}</Avatar></Badge>
+            &nbsp;{r.description+r.description+r.description+r.description+r.description}
+          </Typography>
+        </React.Fragment>}
+        secondary={<React.Fragment>
+            {formatDistance(new Date(r.createdAt["_seconds"] * 1000), new Date(), { addSuffix: true })}
+          &nbsp;&nbsp;
+          <Typography component="span" variant="body2" color="textPrimary">
+            <Link href={`mailto:${r.from}`} color="inherit">{`${r.from}`}</Link>{`, ${r.city}`}
+          </Typography>
+          &nbsp;&nbsp;
+          {r.assignedTo!==''?<React.Fragment>
+            <br/>poc:&nbsp;<Link href={`mailto:${r.from}`} color="inherit">{r.assignedTo}</Link>
+            </React.Fragment>:null}
+        </React.Fragment>} />
+      <ListItemText >
+        <div className={classes.itemactions}>
+          <Tooltip title="Assign POC">
+            <IconButton edge="end" aria-label="assign" onClick={() => { setCurrentReq(r);} }>
+              <PersonAddIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Reply">
+            <IconButton edge="end" aria-label="reply" onClick={() => { setCurrentReq(r); setNewReplyDialog(true); } }>
+              <ReplyIcon />
+            </IconButton>
+          </Tooltip>
+        </div>
+      </ListItemText>
+    </ListItem>
+    {r.showReplies?r.replies.map((rr) => {
+      return <ListItem key={rr.id + 'r'} className={classes.replyList}>
+          <ListItemIcon>
+            <SubdirectoryArrowRightIcon/>
+          </ListItemIcon>
+          <ListItemText
+            primary={rr.description}
+            secondary={<React.Fragment>
+              {formatDistance(new Date(rr.createdAt["_seconds"] * 1000), new Date(), { addSuffix: true })}
+              <Typography
+                component="span"
+                variant="body2"
+                className={classes.inline}
+                color="textPrimary"
+              >
+                &nbsp;&nbsp;{`${rr.from}`}
+              </Typography>
+            </React.Fragment>}
+          />
+        </ListItem>;
+    }):null}
+    <Divider inset/>
+  </React.Fragment>;
 }
