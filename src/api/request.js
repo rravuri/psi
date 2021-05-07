@@ -76,7 +76,7 @@ const request = express.Router();
 request.post('/', requireUser, async function(req, res){
   const {log, db}=req.app;
   let {from, description, city=null, category='info', status='open', 
-    needByTime=null, contactNumber=null, requestedFor='self', replyTo='', assignedTo=''} = req.body||{};
+    needByTime=null, contactNumber=null, requestedFor='self', replyTo='', assignedTo=[]} = req.body||{};
   let fromid=req.userid;
   try {
     let requestsRef=db().collection('/psnext_requests');
@@ -100,6 +100,50 @@ request.post('/', requireUser, async function(req, res){
   } catch(ex) {
     log.error('Unable to add new request', ex);
     return res.status(500).send();
+  }
+});
+
+request.post('/:id/assign', requireUser, async function(req, res){
+  const {log, db, mailer}=req.app;
+  let assignedTo= req.body.assignedTo;
+  if (!assignedTo) {
+    return res.status(400).json({error:'invalid assignedTo value in body'});
+  }
+
+  assignedTo = assignedTo.map(a=>a.toLowerCase());
+
+  try {
+    const docRef = db().collection('/psnext_requests').doc(req.params.id);
+
+    const doc= await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).send();
+    }
+
+    const data=doc.data();
+
+    await docRef.update({
+      assignedTo: assignedTo
+    });
+
+    assignedTo.forEach(async email=>{
+      const msg = {
+        to: email,
+        from: `"psnext.info" <${process.env.MAIL_FROM}>`,
+        subject: 'Assigned to Request - ps4u.psnext.info',
+        text: `You have been assigned as POC to request.\n REQUEST: ${data.description}\n FROM: ${data.from} , Please see how you can help or add other POC's that can help.\n Thanks`,
+        html: `You have been assigned as POC to request on <a href="https://ps4u.psnext.info">https://ps4u.psnext.info</a>.<hr/>${data.description}<br/> from:<a href="mailto:${data.from}">${data.from}</a>.<hr/> Please see how you can help or add other POC's that can help.<br/> Thanks`,
+      }
+      if (process.env.SKIP_MAIL){
+        log.debug('skipped mail', msg);;
+      }
+      await mailer.sendMail(msg);
+    });
+    return res.status(200).send();
+  } catch (ex) {
+    log.error(ex);
+    return res.status(500).json({error:'Unexpected error'});
   }
 });
 

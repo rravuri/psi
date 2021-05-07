@@ -69,6 +69,11 @@ user.post('/register', async function(req, res){
     return res.status(400).json({error:'Invalid email.'});
   }
 
+  if (email.substr(aidx, email.length-aidx)!=='@publicissapient.com'){
+    return res.status(400).json({error:'Requires email with @publicissapient.com'});
+  }
+
+
   const token = uuid();
   try {
     let usersRef=db().collection('/psnext_users');
@@ -84,7 +89,7 @@ user.post('/register', async function(req, res){
       snapshot = await usersRef.where("email","==",email).limit(1).get();
     }
 
-    const userRef = snapshot.docs[0].ref;
+    // const userRef = snapshot.docs[0].ref;
 
     await db().collection('psnext_tokens').add({
       token,
@@ -105,8 +110,8 @@ user.post('/register', async function(req, res){
       to: email,
       from: `"psnext.info" <${process.env.MAIL_FROM}>`,
       subject: 'Verify registration - psnext.info',
-      text: `Confirm your Registration on psnext.info now by visiting this link ${tokenUrl}`,
-      html: `Confirm your Registration on psnext.info now by visiting this link <a href="${tokenUrl}">${tokenUrl}</a>`,
+      text: `Confirm your Registration on ${req.get('host')} now by visiting this link ${tokenUrl}`,
+      html: `Confirm your Registration on ${req.get('host')} now by visiting this link <a href="${tokenUrl}">${tokenUrl}</a>`,
     }
     if (process.env.SKIP_MAIL){
       log.debug('skipped mail', msg);
@@ -218,6 +223,34 @@ user.get('/', requireUser, async (req, res)=>{
     email: req.user.email,
   }
   return res.json(user);
+});
+
+user.get('/match', requireUser, async (req, res)=>{
+  const {log, db} = req.app;
+  log.debug(`getting users`);
+  const email = req.query.email;
+
+  if (!email) {
+    return res.json([]);
+  }
+  if (email.length<3) return res.json([]);
+  try {
+    const usersRef=db().collection('/psnext_users');
+    const  users = []
+    const snapshot = await usersRef.orderBy('email')
+      .startAt(email.toLowerCase())
+      .endAt(email.toLowerCase() + '\uf8ff')
+      .get();
+
+    snapshot.forEach(doc=>{
+      const u={id: doc.id, email: doc.data().email};
+      users.push(u);
+    })
+    return res.json(users);
+  } catch(ex) {
+    log.error(ex);
+    return res.status(500).send();
+  }
 });
 
 

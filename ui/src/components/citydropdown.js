@@ -24,9 +24,12 @@ export default function CityDropdown({cityValue={city:'', state:''}, onChange, w
   const [open, toggleOpen] = React.useState(false);
 
   React.useEffect(()=>{
-    const didx=cityList.findIndex(c=>c.city===cityValue.city);
+    let didx=-1;
+    if (cityValue) {
+      didx=cityList.findIndex(c=>c.city===cityValue.city);
+    }
     if (didx===-1){
-      setValue(didx);
+      setValue(cityList[4]);
     } else {
       setValue(cityList[didx]);
     }

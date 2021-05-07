@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { AppBar, Avatar, Backdrop, Badge, Button, ButtonGroup, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Grow, IconButton, InputBase, Link, ListItemIcon, ListItemSecondaryAction, TextField, Toolbar, Tooltip, Typography } from "@material-ui/core";
+import { AppBar, Avatar, Backdrop, Badge, Button, ButtonGroup, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Grow, IconButton, InputBase, Link, ListItemIcon, ListItemSecondaryAction, Menu, MenuItem, TextField, Toolbar, Tooltip, Typography } from "@material-ui/core";
 import CityDropdown from "../../components/citydropdown";
 import { useAuth } from "../../useauth";
 import useScrollTrigger from '@material-ui/core/useScrollTrigger';
@@ -14,10 +14,12 @@ import FormLabel from '@material-ui/core/FormLabel';
 import SearchIcon from '@material-ui/icons/Search';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import PersonIcon from '@material-ui/icons/Person';
+import FilterListIcon from '@material-ui/icons/FilterList';
 import ArrowRightIcon from '@material-ui/icons/ArrowRight';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import ReplyIcon from '@material-ui/icons/Reply';
+import CallIcon from '@material-ui/icons/Call';
 import NoteAddIcon from '@material-ui/icons/NoteAdd';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -28,7 +30,7 @@ import { fade, makeStyles } from '@material-ui/core/styles';
 import { DateTimePicker } from '@material-ui/pickers'
 import { format, formatDistance} from 'date-fns';
 
-import SplitButton from '../../components/splitbutton';
+import UsersTextField from '../../components/userstextfield';
 
 const useStyles = makeStyles((theme) => ({
   grow: {
@@ -77,13 +79,13 @@ const useStyles = makeStyles((theme) => ({
   },
   sectionDesktop: {
     display: 'none',
-    [theme.breakpoints.up('xs')]: {
+    [theme.breakpoints.up('md')]: {
       display: 'flex',
     },
   },
   sectionMobile: {
     display: 'flex',
-    [theme.breakpoints.up('xs')]: {
+    [theme.breakpoints.up('md')]: {
       display: 'none',
     },
   }
@@ -109,26 +111,43 @@ const useStyles = makeStyles((theme) => ({
 
 export default function OpenRequests({city}) {
   const auth = useAuth();
+  const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
+  const openFilterMenu = Boolean(menuAnchorEl);
   const [from, setFrom] = useState(auth.user.email);
   const [category, setCategory] = useState('info');
   const [rcity, setrcity] = useState({city:"", state:""});
-  const [desc, setDesc] = useState(null);
+  const [desc, setDesc] = useState('');
   const [nbtime, setNBTime] = useState(null);
   const [contactNumber, setContactNumber] = useState(null);
   const [requestedFor, setRequestedFor] = useState('self');
-  const [replydesc, setReplyDesc] = useState(null);
+  const [replydesc, setReplyDesc] = useState('');
   const [currentReq, setCurrentReq] = useState(null);
   const [error, setError] = useState(null);
+  const [assignedTo, setAssignedTo] = useState([]);
 
   const [isBusy, setBusy] = useState(false);
   const [openNewDialog, setOpenNewDialog] = useState(false);
   const [openNewReplyDialog, setNewReplyDialog] = useState(false);
+  const [openPocDialog, showPocDialog] = useState(false);
+
   const [requests, setRequests] =useState([]);
   const classes = useStyles();
 
   useEffect(()=>{
+    if (currentReq) {
+      setAssignedTo([...currentReq.assignedTo]);
+    }
+  }, [currentReq]);
+
+  useEffect(()=>{
+    setBusy(true);
     setrcity(city)
-    axios.get(`/api/request/`)
+    const url='/api/request?';
+    const options=[]
+    if (city && city.city!==''){
+      options.push(`city=${city.city}`);
+    }
+    axios.get(url+options.join('&'))
       .then(res=>{
         setRequests(res.data);
       })
@@ -136,7 +155,19 @@ export default function OpenRequests({city}) {
         console.log(err);
         setRequests([]);
       })
+      .finally(()=>{
+        setBusy(false);
+      })
   },[city])
+
+  const handleShowMyRequests = ()=>{
+
+    handleFilterMenuClose();
+  }
+
+  const handleFilterMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
 
   const handleRequestedForCheck = (e)=>{
     setRequestedFor(e.target.checked?'self':'others');
@@ -159,6 +190,7 @@ export default function OpenRequests({city}) {
         description: replydesc,
       }).then((res) =>{
         currentReq.replies=[res.data, ...(currentReq.replies||[])]
+        currentReq.replyCount++;
         // setRequests([res.data, ...requests]);
         setNewReplyDialog(false);
         setError(null);
@@ -169,6 +201,37 @@ export default function OpenRequests({city}) {
       })
     } catch (ex) {
       console.error(ex);
+      setBusy(false);
+    }
+  }
+  const handlePocDiaglogClose = ()=>{
+    showPocDialog(false);
+  }
+
+  const handleAddPoc = (e)=>{
+    e.preventDefault();
+    if (!currentReq) return;
+    try{
+      setBusy(true);
+      axios.post(`/api/request/${currentReq.id}/assign`,{
+        assignedTo: assignedTo
+      }).then(_res=>{
+        const idx= requests.findIndex(r=>r.id===currentReq.id);
+        const mcr = Object.assign({}, currentReq, {assignedTo});
+        requests.splice(idx,1,mcr);
+        setRequests([...requests]);
+        setOpenNewDialog(false);
+        setError(null);
+        setBusy(false);
+      }).catch(err=>{
+        console.log(err);
+        setError('Unable to add request.')
+      })
+
+      showPocDialog(false);
+    } catch (ex) {
+      console.error(ex);
+    } finally {
       setBusy(false);
     }
   }
@@ -206,7 +269,12 @@ export default function OpenRequests({city}) {
   return <div>
     <Container>
       <AppBar position="static">
-        <Toolbar variant="dense">
+        <Toolbar>
+            <Tooltip title="Add new request" >
+              <IconButton aria-label="add new request" edge="start" color="inherit" onClick={()=>setOpenNewDialog(true)} >
+                <NoteAddIcon />
+              </IconButton>
+            </Tooltip>
             {/* <div className={classes.search}>
               <div className={classes.searchIcon}>
                 <SearchIcon />
@@ -222,23 +290,70 @@ export default function OpenRequests({city}) {
             </div> */}
             <div className={classes.grow} />
             <div className={classes.sectionDesktop}>
-              <Tooltip title="Add new request" >
-                <IconButton aria-label="add new request" color="inherit" onClick={()=>setOpenNewDialog(true)} >
-                  <NoteAddIcon />
-                </IconButton>
-              </Tooltip>
+
             </div>
+            <div className={classes.sectionMobile}>
+            </div>
+            <Tooltip title="Filter List" >
+              <IconButton aria-label="Filter request" edge="end" color="inherit" 
+                onClick={(event) => {
+                  setMenuAnchorEl(event.currentTarget);
+                }} >
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+            <Menu id="filter-menu"
+              anchorEl={menuAnchorEl}
+              keepMounted
+              open={openFilterMenu}
+              onClose={handleFilterMenuClose}>
+                  <MenuItem onClick={handleShowMyRequests} >My requests</MenuItem>
+                  <MenuItem>No POC</MenuItem>
+                  <MenuItem>I am POC</MenuItem>
+                  <MenuItem>Open Requests</MenuItem>
+              </Menu>
         </Toolbar>
       </AppBar>
       <Box component="div">
         <List className={classes.list}>
           {requests.map((r)=>{return <RequestItem  key={r.id} request={r} 
+            showPocDialog={showPocDialog}
             setCurrentReq={setCurrentReq} setNewReplyDialog={setNewReplyDialog}/>;
             })
           }
         </List>
       </Box>
     </Container>
+    
+    <Dialog open={openPocDialog} onClose={handlePocDiaglogClose} aria-labelledby="form-pocdialog-title">
+      <form onSubmit={handleAddPoc}>
+        <DialogTitle id="form-pocdialog-title">Add a new request</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Do you have a POC for this request? Please, add here!
+          </DialogContentText>
+          <Grid container spacing={1}>
+            <Grid item xs={12}>
+              <UsersTextField
+                label="POC"
+                placeholder="POC email"
+                variant="outlined"
+                value={assignedTo}
+                onChange={setAssignedTo}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handlePocDiaglogClose} color="primary">
+            Cancel
+          </Button>
+          <Button type="submit" color="primary">
+            Add
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
     <Dialog open={openNewReplyDialog} onClose={handleReplyDiaglogClose} aria-labelledby="form-replydialog-title">
       <form onSubmit={handleSubmitNewReply}>
         <DialogTitle id="form-replydialog-title">Add a new request</DialogTitle>
@@ -263,11 +378,11 @@ export default function OpenRequests({city}) {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleNewDiaglogClose} color="primary">
+          <Button onClick={handleReplyDiaglogClose} color="primary">
             Cancel
           </Button>
           <Button type="submit" color="primary">
-            Add
+            Send
           </Button>
         </DialogActions>
       </form>
@@ -303,6 +418,15 @@ export default function OpenRequests({city}) {
                   onChange={(event) => setFrom(event.target.value)}
                   label="from"
                   type="email"
+                  fullWidth
+                />
+                <TextField
+                  autoFocus
+                  id="contactnumber" placeholder={'+919876543210'}
+                  value={contactNumber}
+                  onChange={(event) => setContactNumber(event.target.value)}
+                  label="Contact Number"
+                  type="phone"
                   fullWidth
                 />
               </Grid>
@@ -346,7 +470,7 @@ export default function OpenRequests({city}) {
               Cancel
             </Button>
             <Button type="submit" color="primary">
-              Add
+              Send
             </Button>
           </DialogActions>
         </form>
@@ -357,7 +481,7 @@ export default function OpenRequests({city}) {
   </div>
 }
 
-function RequestItem({request, setCurrentReq, setNewReplyDialog}) {
+function RequestItem({request, showPocDialog, setCurrentReq, setNewReplyDialog}) {
   const classes = useStyles();
   const [r, setcr] = useState(null);
   const [isBusy, setBusy] = useState(false);
@@ -403,6 +527,7 @@ function RequestItem({request, setCurrentReq, setNewReplyDialog}) {
           onChange={handleShowReplies} />}
         </Badge>
       </ListItemIcon>
+
       <ListItemText
         primary={<React.Fragment>
           <Typography
@@ -411,24 +536,29 @@ function RequestItem({request, setCurrentReq, setNewReplyDialog}) {
             className={classes.inline}
             color="textPrimary">
             <Badge><Avatar alt="r.category" className={classes.listIcon}>{r.category[0].toUpperCase() + ''}</Avatar></Badge>
-            &nbsp;{r.description+r.description+r.description+r.description+r.description}
+            &nbsp;{r.description}
           </Typography>
         </React.Fragment>}
+
         secondary={<React.Fragment>
-            {formatDistance(new Date(r.createdAt["_seconds"] * 1000), new Date(), { addSuffix: true })}
+          {formatDistance(new Date(r.createdAt["_seconds"] * 1000), new Date(), { addSuffix: true })}
           &nbsp;&nbsp;
           <Typography component="span" variant="body2" color="textPrimary">
             <Link href={`mailto:${r.from}`} color="inherit">{`${r.from}`}</Link>{`, ${r.city}`}
           </Typography>
+          {r.contactNumber?<React.Fragment>
+          &nbsp;<Chip label={r.contactNumber} variant="outlined" size="small" icon={<CallIcon/>} component="span"/>
+          </React.Fragment>:null}
           &nbsp;&nbsp;
-          {r.assignedTo!==''?<React.Fragment>
-            <br/>poc:&nbsp;<Link href={`mailto:${r.from}`} color="inherit">{r.assignedTo}</Link>
+          {r.assignedTo.length>0?<React.Fragment>
+            <br/>poc:&nbsp;{r.assignedTo.map((at)=><Link key={at} href={`mailto:${r.from}`} color="inherit">{at}</Link>)}
             </React.Fragment>:null}
         </React.Fragment>} />
+
       <ListItemText >
         <div className={classes.itemactions}>
           <Tooltip title="Assign POC">
-            <IconButton edge="end" aria-label="assign" onClick={() => { setCurrentReq(r);} }>
+            <IconButton edge="end" aria-label="assign" onClick={() => { setCurrentReq(r); showPocDialog(true);} }>
               <PersonAddIcon />
             </IconButton>
           </Tooltip>
@@ -461,6 +591,6 @@ function RequestItem({request, setCurrentReq, setNewReplyDialog}) {
           />
         </ListItem>;
     }):null}
-    <Divider inset/>
+    <Divider variant="inset"/>
   </React.Fragment>;
 }
