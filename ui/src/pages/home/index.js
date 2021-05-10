@@ -18,6 +18,7 @@ import Paper from '@material-ui/core/Paper';
 import CityDropdown from '../../components/citydropdown';
 import OpenRequests from './openrequests';
 import { makeStyles } from '@material-ui/core/styles';
+import PhoneInfo from './PhoneInfo';
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -110,26 +111,19 @@ function Home() {
         <OpenRequests city={city}/>
       </TabPanel>
       <TabPanel value={selectedTab} index={1} className={classes.tabpanel}>
-        <p>Oxygen Information</p>
-
+        <PhoneInfo category={'oxygen'} city={city}/>
       </TabPanel>
       <TabPanel value={selectedTab} index={2} className={classes.tabpanel}>
-        <p>Beds Information</p>
-
+        <PhoneInfo category={'beds'} city={city}/>
       </TabPanel>
       <TabPanel value={selectedTab} index={3} className={classes.tabpanel}>
-        <p>Plasma Information</p>
-
+        <PhoneInfo category={'plasma'} city={city}/>
       </TabPanel>
       <TabPanel value={selectedTab} index={4} className={classes.tabpanel}>
-        <Paper>
-          <p>Medicines Information</p>
-        </Paper>
+        <PhoneInfo category={'medicines'} city={city}/>
       </TabPanel>
       <TabPanel value={selectedTab} index={5} className={classes.tabpanel}>
-        <Paper>
-          <p>Food Information</p>
-        </Paper>
+        <PhoneInfo category={'food'} city={city}/>
       </TabPanel>
     </div>
   </Container>

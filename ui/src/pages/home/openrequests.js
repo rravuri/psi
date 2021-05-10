@@ -298,12 +298,12 @@ export default function OpenRequests({city}) {
                 inputProps={{ 'aria-label': 'search' }}
               />
             </div> */}
-            <div className={classes.grow}>
+            <div className={classes.grow} style={{paddingLeft:'2em'}}>
               Filter:
               {ffrom?<Chip label={'My Requests'} size='small' variant="outlined" color="default"
                 onDelete={()=>setFilterFrom(null)}
               />:null}
-              {city && city.city!==''?<Chip label={city.city} size="small" variant="default"/>:null}
+              {city && city.city!==''?<Chip label={city.city} size="small" variant="outlined"  color="default"/>:null}
             </div>
             <div className={classes.sectionDesktop}>
             </div>
