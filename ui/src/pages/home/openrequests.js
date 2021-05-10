@@ -11,6 +11,7 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
+import SyncIcon from '@material-ui/icons/Sync';
 import SearchIcon from '@material-ui/icons/Search';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import PersonIcon from '@material-ui/icons/Person';
@@ -129,7 +130,7 @@ export default function OpenRequests({city}) {
   const [openNewDialog, setOpenNewDialog] = useState(false);
   const [openNewReplyDialog, setNewReplyDialog] = useState(false);
   const [openPocDialog, showPocDialog] = useState(false);
-
+  const [ffrom, setFilterFrom] = useState(null);
   const [requests, setRequests] =useState([]);
   const classes = useStyles();
 
@@ -140,28 +141,37 @@ export default function OpenRequests({city}) {
   }, [currentReq]);
 
   useEffect(()=>{
-    setBusy(true);
-    setrcity(city)
-    const url='/api/request?';
-    const options=[]
-    if (city && city.city!==''){
-      options.push(`city=${city.city}`);
-    }
-    axios.get(url+options.join('&'))
-      .then(res=>{
-        setRequests(res.data);
-      })
-      .catch(err=>{
-        console.log(err);
-        setRequests([]);
-      })
-      .finally(()=>{
-        setBusy(false);
-      })
-  },[city])
+    // const refreshTimer=setInterval(()=>{
+      setBusy(true);
+      setrcity(city)
+      const url='/api/request?';
+      const options=[]
+      if (city && city.city!==''){
+        options.push(`city=${city.city}`);
+      }
+      if (ffrom) {
+        options.push(`from=${ffrom}`);
+      }
+      axios.get(url+options.join('&'))
+        .then(res=>{
+          let nr=res.data;
+          setRequests(res.data);
+        })
+        .catch(err=>{
+          console.log(err);
+          setRequests([]);
+        })
+        .finally(()=>{
+          setBusy(false);
+        })
+    // }, 150000
+    return (()=>{
+      // clearInterval(refreshTimer)
+    })
+  },[city, ffrom])
 
-  const handleShowMyRequests = ()=>{
-
+  const handleShowMyRequests = (e)=>{
+    setFilterFrom(e.target.checked?auth.user.email:null);
     handleFilterMenuClose();
   }
 
@@ -268,7 +278,7 @@ export default function OpenRequests({city}) {
 
   return <div>
     <Container>
-      <AppBar position="static">
+      <AppBar position="static" color="inherit">
         <Toolbar>
             <Tooltip title="Add new request" >
               <IconButton aria-label="add new request" edge="start" color="inherit" onClick={()=>setOpenNewDialog(true)} >
@@ -288,9 +298,14 @@ export default function OpenRequests({city}) {
                 inputProps={{ 'aria-label': 'search' }}
               />
             </div> */}
-            <div className={classes.grow} />
+            <div className={classes.grow}>
+              Filter:
+              {ffrom?<Chip label={'My Requests'} size='small' variant="outlined" color="default"
+                onDelete={()=>setFilterFrom(null)}
+              />:null}
+              {city && city.city!==''?<Chip label={city.city} size="small" variant="default"/>:null}
+            </div>
             <div className={classes.sectionDesktop}>
-
             </div>
             <div className={classes.sectionMobile}>
             </div>
@@ -307,8 +322,11 @@ export default function OpenRequests({city}) {
               keepMounted
               open={openFilterMenu}
               onClose={handleFilterMenuClose}>
-                  <MenuItem onClick={handleShowMyRequests} >My requests</MenuItem>
-                  <MenuItem>No POC</MenuItem>
+                  <MenuItem>
+                    <Checkbox onChange={handleShowMyRequests} checked={ffrom===auth.user.email} />
+                    My requests
+                  </MenuItem>
+                  <MenuItem></MenuItem>
                   <MenuItem>I am POC</MenuItem>
                   <MenuItem>Open Requests</MenuItem>
               </Menu>

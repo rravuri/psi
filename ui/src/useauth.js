@@ -56,6 +56,8 @@ function useProvideAuth() {
           })
           .catch(err=>{
             console.error(err);
+          }).finally(()=>{
+            setChecking(false);
           })
       } else {
         setChecking(false);
@@ -65,7 +67,7 @@ function useProvideAuth() {
     return () => {
       clearInterval(iHandle)
     }
-  });
+  },[checking, lastlc]);
 
   return {
     checking,
