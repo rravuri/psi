@@ -9,19 +9,28 @@ steps:
       # save the commit sha & build date
       NOW=$(date +"%Y-%m-%d %T")
       echo $BRANCH_NAME $SHORT_SHA $$NOW > BUILDINFO
-# step 1 build the container image
-- name: 'gcr.io/cloud-builders/docker'
+- name: 'gcr.io/kaniko-project/executor:latest'
   args: [
-    'build', 
-    '-t', 'gcr.io/$PROJECT_ID/psi:$SHORT_SHA', 
-    '-t', 'gcr.io/$PROJECT_ID/psi:latest', 
+    '--destination=gcr.io/$PROJECT_ID/psi:$SHORT_SHA',
+    '--destination=gcr.io/$PROJECT_ID/psi:latest',
     '--build-arg','COMMITSHA=$COMMIT_SHA',
     '--build-arg','SHORTSHA=$SHORT_SHA',
-    '--cache-from', 'gcr.io/$PROJECT_ID/psi:latest',
-    '.']
+    '--cache=true',
+    '--cache-ttl=336h'
+  ]
+# step 1 build the container image
+# - name: 'gcr.io/cloud-builders/docker'
+#   args: [
+#     'build', 
+#     '-t', 'gcr.io/$PROJECT_ID/psi:$SHORT_SHA', 
+#     '-t', 'gcr.io/$PROJECT_ID/psi:latest', 
+#     '--build-arg','COMMITSHA=$COMMIT_SHA',
+#     '--build-arg','SHORTSHA=$SHORT_SHA',
+#     '--cache-from', 'gcr.io/$PROJECT_ID/psi:latest',
+#     '.']
 # step 2 push container image
-- name: "gcr.io/cloud-builders/docker"
-  args: ["push", "gcr.io/$PROJECT_ID/psi:$SHORT_SHA"]
+# - name: "gcr.io/cloud-builders/docker"
+#   args: ["push", "gcr.io/$PROJECT_ID/psi:$SHORT_SHA"]
 # step 3 deploy container image to GKE
 - name: "gcr.io/cloud-builders/kubectl"
   args: ['set', 'image', 'deployment/psi', 'psi=gcr.io/$PROJECT_ID/psi:$SHORT_SHA']
