@@ -32,6 +32,7 @@ import { fade, makeStyles } from '@material-ui/core/styles';
 import { DateTimePicker } from '@material-ui/pickers'
 import { format, formatDistance} from 'date-fns';
 
+import PhonenumberField,{NumberFormatPhone} from '../../components/phonenumberfield';
 import UsersTextField from '../../components/userstextfield';
 import PatientInfoDialog from './PatientInfoDialog';
 
@@ -481,13 +482,12 @@ export default function OpenRequests({city}) {
                   type="email"
                   fullWidth
                 />
-                <TextField
+                <PhonenumberField
                   autoFocus
                   id="contactnumber" placeholder={'+919876543210'}
                   value={contactNumber}
                   onChange={(event) => setContactNumber(event.target.value)}
                   label="Contact Number"
-                  type="phone"
                   fullWidth
                 />
               </Grid>

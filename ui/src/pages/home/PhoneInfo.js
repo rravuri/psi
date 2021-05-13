@@ -3,8 +3,7 @@ import { fade, makeStyles } from '@material-ui/core/styles';
 import { Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormLabel, Grid, InputAdornment, Paper, Radio, RadioGroup, TextField } from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import SearchIcon from '@material-ui/icons/Search';
-import PhoneIcon from '@material-ui/icons/Phone';
-import NumberFormat from 'react-number-format';
+import PhonenumberField,{NumberFormatPhone} from '../../components/phonenumberfield';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -53,26 +52,6 @@ export default function PhoneInfo({category='  ', city}){
 } 
 
 
-function NumberFormatPhone(props) {
-  const { inputRef, onChange, ...other } = props;
-
-  return (
-    <NumberFormat
-      {...other}
-      getInputRef={inputRef}
-      onValueChange={(values) => {
-        onChange({
-          target: {
-            name: props.name,
-            value: values.value,
-          },
-        });
-      }}
-      format="+91 ##### #####"
-      allowEmptyFormatting mask="_"
-    />
-  );
-}
 
 function AutocompletePhone({phonenumber, onSelect, onChange}){
   const [value, setValue] = useState(phonenumber);
@@ -162,17 +141,10 @@ function FilterControls({defaultCategory}){
           </DialogContentText>
           <Grid container spacing={1}>
             <Grid item xs={12}>
-              <TextField label="Phone" type='phone' margin="normal" variant="outlined" 
+              <PhonenumberField label="Phone" margin="normal" variant="outlined" 
                   value={phonenumber}
                   onChange={handlePhonenumberChange}
-                  InputProps={{
-                    inputComponent: NumberFormatPhone,
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PhoneIcon />
-                      </InputAdornment>
-                    ),
-                  }}/>
+                  />
             </Grid>
             <Grid item xs={12}>
               <FormControl component="fieldset">
