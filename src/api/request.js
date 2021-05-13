@@ -75,23 +75,34 @@ const request = express.Router();
  */
 request.post('/', requireUser, async function(req, res){
   const {log, db}=req.app;
-  let {from, description, city=null, category='info', status='open', 
+  let {from, description, city=null, category='info', status, 
     needByTime=null, contactNumber=null, requestedFor='self', replyTo='', assignedTo=[]} = req.body||{};
   let fromid=req.userid;
   try {
     let requestsRef=db().collection('/psnext_requests');
     const ts=db.FieldValue.serverTimestamp();
+
+    let updates;
+
+    if (replyTo) {
+     updates = {
+        replyCount: db.FieldValue.increment(1)
+      };
+      if (status) {
+        updates.status = status;
+        description=`Updated status to "${status}"\n`;
+      }
+    }
+
     const result = await requestsRef.add({
-      from, fromid, city, description, city, category, status,
+      from, fromid, city, description, city, category, status:(status||'open'),
       needByTime, contactNumber, requestedFor, replyTo, replyCount:0,
       createdAt: ts, assignedTo,
     });
-    if (replyTo) {
-      requestsRef.doc(replyTo).update({
-        replyCount: db.FieldValue.increment(1)
-      })
-    }
     log.debug(`Added request with ID: ${result.id}`);
+
+    requestsRef.doc(replyTo).update(updates);
+
     const snapshot = await result.get();
     const data = snapshot.data();
     // data.createdAt=(new db.Timestamp(data.createdAt.seconds, data.createdAt.nanoseconds)).toDate();
@@ -100,6 +111,34 @@ request.post('/', requireUser, async function(req, res){
   } catch(ex) {
     log.error('Unable to add new request', ex);
     return res.status(500).send();
+  }
+});
+
+request.post('/:id/pinfo', requireUser, async function(req, res){
+  const {log, db}=req.app;
+  let patientInfo= req.body;
+  if (!patientInfo) {
+    return res.status(400).json({error:'invalid value in body'});
+  }
+
+  try {
+    const docRef = db().collection('/psnext_requests').doc(req.params.id);
+
+    const doc= await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).send();
+    }
+
+    // const data=doc.data();
+
+    await docRef.update({
+      patientInfo
+    });
+    return res.status(200).send();
+  } catch (ex) {
+    log.error(ex);
+    return res.status(500).json({error:'Unexpected error'});
   }
 });
 

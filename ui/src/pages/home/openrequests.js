@@ -15,6 +15,7 @@ import SyncIcon from '@material-ui/icons/Sync';
 import SearchIcon from '@material-ui/icons/Search';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import PersonIcon from '@material-ui/icons/Person';
+import AssignmentIndIcon from '@material-ui/icons/AssignmentInd';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import ArrowRightIcon from '@material-ui/icons/ArrowRight';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
@@ -32,6 +33,7 @@ import { DateTimePicker } from '@material-ui/pickers'
 import { format, formatDistance} from 'date-fns';
 
 import UsersTextField from '../../components/userstextfield';
+import PatientInfoDialog from './PatientInfoDialog';
 
 const useStyles = makeStyles((theme) => ({
   grow: {
@@ -130,13 +132,16 @@ export default function OpenRequests({city}) {
   const [openNewDialog, setOpenNewDialog] = useState(false);
   const [openNewReplyDialog, setNewReplyDialog] = useState(false);
   const [openPocDialog, showPocDialog] = useState(false);
+  const [openPInfoDialog, showPInfoDialog] = useState(false);
   const [ffrom, setFilterFrom] = useState(null);
+  const [rstatus, setRStatus] = useState(null);
   const [requests, setRequests] =useState([]);
   const classes = useStyles();
 
   useEffect(()=>{
     if (currentReq) {
       setAssignedTo([...currentReq.assignedTo]);
+      setRStatus(currentReq.status);
     }
   }, [currentReq]);
 
@@ -154,7 +159,6 @@ export default function OpenRequests({city}) {
       }
       axios.get(url+options.join('&'))
         .then(res=>{
-          let nr=res.data;
           setRequests(res.data);
         })
         .catch(err=>{
@@ -198,9 +202,13 @@ export default function OpenRequests({city}) {
         from: auth.user.email,
         replyTo: currentReq?currentReq.id:null,
         description: replydesc,
+        status: rstatus
       }).then((res) =>{
         currentReq.replies=[res.data, ...(currentReq.replies||[])]
         currentReq.replyCount++;
+        if (rstatus!==currentReq.status) {
+          currentReq.status=rstatus;
+        }
         // setRequests([res.data, ...requests]);
         setNewReplyDialog(false);
         setError(null);
@@ -208,6 +216,25 @@ export default function OpenRequests({city}) {
       }).catch(err=>{
         console.log(err);
         setError('Unable to add request.')
+      })
+    } catch (ex) {
+      console.error(ex);
+      setBusy(false);
+    }
+  }
+
+
+  const handlePInfoChange = (data)=>{
+    try{
+      setBusy(true);
+      axios.post(`/api/request/${currentReq.id}/pinfo`,data).then((_res) =>{
+        currentReq.patientInfo=data;
+        showPInfoDialog(false);
+        setError(null);
+        setBusy(false);
+      }).catch(err=>{
+        console.log(err);
+        setError('Unable to add patient info.')
       })
     } catch (ex) {
       console.error(ex);
@@ -271,10 +298,12 @@ export default function OpenRequests({city}) {
         setError('Unable to add request.')
       })
     } catch (ex) {
-      console.error(ex);
       setBusy(false);
+      console.error(ex);
     }
   }
+
+  const handlePInfoClose = ()=>showPInfoDialog(false);
 
   return <div>
     <Container>
@@ -335,7 +364,7 @@ export default function OpenRequests({city}) {
       <Box component="div">
         <List className={classes.list}>
           {requests.map((r)=>{return <RequestItem  key={r.id} request={r} 
-            showPocDialog={showPocDialog}
+            showPocDialog={showPocDialog} showPInfoDialog={showPInfoDialog}
             setCurrentReq={setCurrentReq} setNewReplyDialog={setNewReplyDialog}/>;
             })
           }
@@ -393,6 +422,15 @@ export default function OpenRequests({city}) {
                 onChange={(event) => setReplyDesc(event.target.value)}
               />
             </Grid>
+            <Grid item xs={12}>
+              <TextField select
+                label='status'
+                value={rstatus}
+                onChange={(e)=>setRStatus(e.target.value)}>
+                  <MenuItem key={'open'} value={'open'}>Open</MenuItem>
+                  <MenuItem key={'closed'} value={'closed'}>Closed</MenuItem>
+                </TextField>
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
@@ -405,6 +443,11 @@ export default function OpenRequests({city}) {
         </DialogActions>
       </form>
     </Dialog>
+
+    <PatientInfoDialog open={openPInfoDialog} onClose={handlePInfoClose} onChange={handlePInfoChange} 
+      data={currentReq?currentReq.patientInfo:null}/>
+
+
     <Dialog open={openNewDialog} onClose={handleNewDiaglogClose} aria-labelledby="form-dialog-title">
         <form onSubmit={handleSubmitNewRequest}>
           <DialogTitle id="form-dialog-title">Add a new request</DialogTitle>
@@ -499,7 +542,7 @@ export default function OpenRequests({city}) {
   </div>
 }
 
-function RequestItem({request, showPocDialog, setCurrentReq, setNewReplyDialog}) {
+function RequestItem({request, showPocDialog, setCurrentReq, setNewReplyDialog, showPInfoDialog}) {
   const classes = useStyles();
   const [r, setcr] = useState(null);
   const [isBusy, setBusy] = useState(false);
@@ -568,13 +611,23 @@ function RequestItem({request, showPocDialog, setCurrentReq, setNewReplyDialog})
           &nbsp;<Chip label={r.contactNumber} variant="outlined" size="small" icon={<CallIcon/>} component="span"/>
           </React.Fragment>:null}
           &nbsp;&nbsp;
-          {r.assignedTo.length>0?<React.Fragment>
-            <br/>poc:&nbsp;{r.assignedTo.map((at)=><Link key={at} href={`mailto:${r.from}`} color="inherit">{at}</Link>)}
-            </React.Fragment>:null}
+            <br/>
+            <Chip label={`status: ${r.status}`} variant="filled" color="primary" size="small"/>&nbsp;&nbsp;&nbsp;
+            {r.assignedTo.length>0?(
+              <React.Fragment>
+                poc: &nbsp;
+                {r.assignedTo.map((at)=><Link key={at} href={`mailto:${r.from}`} color="inherit">{at}</Link>)}
+              </React.Fragment>
+            ):null}
         </React.Fragment>} />
 
       <ListItemText >
         <div className={classes.itemactions}>
+          <Tooltip title="Patient Info">
+            <IconButton edge="end" aria-label="pinfo" onClick={() => { setCurrentReq(r); showPInfoDialog(true);} }>
+              <AssignmentIndIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Assign POC">
             <IconButton edge="end" aria-label="assign" onClick={() => { setCurrentReq(r); showPocDialog(true);} }>
               <PersonAddIcon />
