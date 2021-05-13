@@ -508,7 +508,7 @@ export default function OpenRequests({city}) {
                   onChange={(event) => setDesc(event.target.value)}
                 />
               </Grid>
-              <Grid item xs={6}> 
+              {/* <Grid item xs={6}> 
                 <FormControlLabel
                   control={<Checkbox color="primary" checked={requestedFor==='self'} onChange={handleRequestedForCheck} />}
                   label="For Self?"
@@ -523,7 +523,7 @@ export default function OpenRequests({city}) {
                   inputVariant='standard'
                   showTodayButton
                   value={nbtime} onChange={(d)=>setNBTime(d)}/>
-              </Grid>
+              </Grid> */}
             </Grid>
           </DialogContent>
           <DialogActions>
