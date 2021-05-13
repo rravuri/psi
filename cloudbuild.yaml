@@ -12,7 +12,6 @@ steps:
 - name: 'gcr.io/kaniko-project/executor:latest'
   args: [
     '--destination=gcr.io/$PROJECT_ID/psi:$SHORT_SHA',
-    '--destination=gcr.io/$PROJECT_ID/psi:latest',
     '--build-arg','COMMITSHA=$COMMIT_SHA',
     '--build-arg','SHORTSHA=$SHORT_SHA',
     '--cache=true',
@@ -37,6 +36,6 @@ steps:
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=$_CLOUDSDK_COMPUTE_ZONE'
   - 'CLOUDSDK_CONTAINER_CLUSTER=$_CLOUDSDK_CONTAINER_CLUSTER'
-images:
-- gcr.io/$PROJECT_ID/psi:$SHORT_SHA
-- gcr.io/$PROJECT_ID/psi:latest
+# images:
+# - gcr.io/$PROJECT_ID/psi:$SHORT_SHA
+# - gcr.io/$PROJECT_ID/psi:latest
