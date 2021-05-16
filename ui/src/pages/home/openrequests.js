@@ -306,14 +306,16 @@ export default function OpenRequests({city}) {
 
   const handlePInfoClose = ()=>showPInfoDialog(false);
 
-  return <div>
-    <Container>
+  return <React.Fragment>
+    <Container disableGutters>
       <AppBar position="static" color="inherit">
         <Toolbar>
             <Tooltip title="Add new request" >
-              <IconButton aria-label="add new request" edge="start" color="inherit" onClick={()=>setOpenNewDialog(true)} >
-                <NoteAddIcon />
-              </IconButton>
+              <Button aria-label="add new request" edge="start" color="primary" variant='contained'
+                startIcon={<NoteAddIcon />} 
+                onClick={()=>setOpenNewDialog(true)} >
+                Add
+              </Button>
             </Tooltip>
             {/* <div className={classes.search}>
               <div className={classes.searchIcon}>
@@ -539,7 +541,7 @@ export default function OpenRequests({city}) {
       <Backdrop className={classes.backdrop} open={isBusy}>
         <CircularProgress color="inherit" />
       </Backdrop>
-  </div>
+  </React.Fragment>
 }
 
 function RequestItem({request, showPocDialog, setCurrentReq, setNewReplyDialog, showPInfoDialog}) {

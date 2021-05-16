@@ -101,7 +101,9 @@ request.post('/', requireUser, async function(req, res){
     });
     log.debug(`Added request with ID: ${result.id}`);
 
-    requestsRef.doc(replyTo).update(updates);
+    if (replyTo) {
+      requestsRef.doc(replyTo).update(updates);
+    }
 
     const snapshot = await result.get();
     const data = snapshot.data();

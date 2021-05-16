@@ -4,6 +4,8 @@ import { Button, Container, Dialog, DialogActions, DialogContent, DialogContentT
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import SearchIcon from '@material-ui/icons/Search';
 import PhonenumberField,{NumberFormatPhone} from '../../components/phonenumberfield';
+import AddPhoneDialog from './AddPhoneDialog';
+import axios from 'axios';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -41,7 +43,7 @@ export default function PhoneInfo({category='  ', city}){
         </Grid>
 
         <Grid item xs>
-          <Paper className={classes.paper}><FilterControls defaultCategory={category}/></Paper>
+          <Paper className={classes.paper}><FilterControls defaultCategory={category} defaultCity={city}/></Paper>
         </Grid>
         <Grid item xs>
           <Paper className={classes.paper}><PhoneList category={category}/></Paper>
@@ -93,99 +95,50 @@ function AutocompletePhone({phonenumber, onSelect, onChange}){
   )
 }
 
-function FilterControls({defaultCategory}){
+function FilterControls({defaultCategory, defaultCity}){
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [phonenumber, setPhoneNumber] = useState('');
-  const [category, setCategory] = useState(defaultCategory);
-  const [desc, setDesc] = useState('');
+  const [error, setError] = useState(null);
 
-  const handleAddDiaglogOpen = ()=>{
-    setOpenAddDialog(true);
+  const handleAddDiaglogOpen = ()=>setOpenAddDialog(true);
+  
+  const handleAddDiaglogClose = ()=>setOpenAddDialog(false);
+
+  const handlePhonenumberChange = (newvalue)=>setPhoneNumber(newvalue);
+
+
+  const handleAddPhoneInfo = (data)=>{
+    try {
+      axios.post('/api/phone/', data)
+        .then(_res=>{
+          setError(null);
+          setOpenAddDialog(false);
+        })
+        .catch(err=>{
+          console.dir(err);
+          if (err.response.status===400) {
+            setError(err.response.data.error);
+          }
+        })
+    } catch(ex) {
+      console.error(ex);
+    }
   }
-  const handleAddDiaglogClose = ()=>{
-    setOpenAddDialog(false);
-  }
-
-  const handlePhonenumberChange = (newvalue)=>{
-    setPhoneNumber(newvalue);
-  }
-
-  const handleCategoryChange = (e)=>{
-    setCategory(e.target.value);
-  }
-
-  const handleAddNewPhone = ()=>{
-
-  }
-
   return (<React.Fragment>
     <Grid container spacing={1} alignItems='center'>
       <Grid item xs={1}>
-        <Button color='primary' variant="filled" onClick={handleAddDiaglogOpen}>Add</Button>
+        <Button color='primary' variant="contained" onClick={handleAddDiaglogOpen}>Add</Button>
       </Grid>
-      <Grid item xs direction='row'>
-        <Grid item xs>
-          <AutocompletePhone onChange={handlePhonenumberChange}/>
-        </Grid>
+      <Grid item xs={6}>
+        <AutocompletePhone onChange={handlePhonenumberChange}/>
       </Grid>
       {/* <Grid item xs>
         <p>Filter options:</p>
       </Grid> */}
     </Grid>
-    <Dialog open={openAddDialog} onClose={handleAddDiaglogClose} aria-labelledby="form-phonedialog-title">
-      <form onSubmit={handleAddNewPhone}>
-        <DialogTitle id="form-phonedialog-title">Add a new request</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Do you have new phonenumber for covid resources? Please, add here!
-          </DialogContentText>
-          <Grid container spacing={1}>
-            <Grid item xs={12}>
-              <PhonenumberField label="Phone" margin="normal" variant="outlined" 
-                  value={phonenumber}
-                  onChange={handlePhonenumberChange}
-                  />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl component="fieldset">
-                <FormLabel component="legend">Category</FormLabel>
-                <RadioGroup row aria-label="category" name="category1" value={category} onChange={handleCategoryChange}>
-                  <FormControlLabel value="info" control={<Radio />} label="Info" />
-                  <FormControlLabel value="oxygen" control={<Radio />} label="Oxygen" />
-                  <FormControlLabel value="bed" control={<Radio />} label="Bed" />
-                  <FormControlLabel value="medicines" control={<Radio />} label="Medicines" />
-                  <FormControlLabel value="food" control={<Radio />} label="Food" />
-                  <FormControlLabel value="transport" control={<Radio />} label="Transport" />
-                  <FormControlLabel value="other" control={<Radio />} label="Other" />
-                  {/* <FormControlLabel value="medicine" disabled control={<Radio />} label="(Disabled option)" /> */}
-                </RadioGroup>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                id="desc"
-                label="Desc"
-                multiline
-                rows={4}
-                placeholder="Additional info ."
-                variant="outlined" 
-                fullWidth
-                value={desc}
-                onChange={(event) => setDesc(event.target.value)}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleAddDiaglogClose} color="primary">
-            Cancel
-          </Button>
-          <Button type="submit" color="primary">
-            Add
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+    <AddPhoneDialog open={openAddDialog} onClose={handleAddDiaglogClose} 
+      onSubmit={handleAddPhoneInfo} error={error}
+      data={{phonenumber, category:defaultCategory, city:defaultCity}}/>
     </React.Fragment>
   )
 }

@@ -46,7 +46,7 @@ app.get('/_buildinfo', function(_req, res){
 })
 app.use('/api/user', require('./api/user.js'));
 app.use('/api/request', require('./api/request.js'));
-app.use('/api/phone', require('./api/phonenumbers.js'));
+app.use('/api/phone', require('./api/phone.js'));
 app.use(require('./openapi'));
 
 app.get('/*', function (req, res) {

@@ -18,7 +18,7 @@ import cityList from './cities';
 
 const filterOptions = createFilterOptions({stringify:op=>op.city});
 
-export default function CityDropdown({cityValue={city:'', state:''}, onChange, width='100%', variant="outlined"}) {
+export default function CityDropdown({cityValue={city:'', state:''}, onChange, width='100%', variant="outlined", ...otherProps}) {
   const [value, setValue] = React.useState(cityList[4]);
   const [inputValue, setInputValue] = React.useState(value?value.city:'');
   const [open, toggleOpen] = React.useState(false);
@@ -62,6 +62,7 @@ export default function CityDropdown({cityValue={city:'', state:''}, onChange, w
   return (
     <React.Fragment>
       <Autocomplete
+        {...otherProps}
         value={value}
         inputValue={inputValue}
         onInputChange={(_event, newInputValue) => {
@@ -94,8 +95,8 @@ export default function CityDropdown({cityValue={city:'', state:''}, onChange, w
         id="city-dialog"
         options={cityList}
         getOptionLabel={(option) => option.city}
-        style={{ width }}
-        renderInput={(params) => <TextField {...params} label="City" variant={variant} />}
+        style={{ width , maxWidth:'90vw'}}
+        renderInput={(params) => <TextField fullWidth {...params} label="City" variant={variant} />}
         renderOption={(option) => (
           <React.Fragment>
             {option.city}
