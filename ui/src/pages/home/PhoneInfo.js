@@ -6,6 +6,7 @@ import SearchIcon from '@material-ui/icons/Search';
 import PhonenumberField,{NumberFormatPhone} from '../../components/phonenumberfield';
 import AddPhoneDialog from './AddPhoneDialog';
 import axios from 'axios';
+import PhoneGrid from './PhoneGrid';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -46,7 +47,7 @@ export default function PhoneInfo({category='  ', city}){
           <Paper className={classes.paper}><FilterControls defaultCategory={category} defaultCity={city}/></Paper>
         </Grid>
         <Grid item xs>
-          <Paper className={classes.paper}><PhoneList category={category}/></Paper>
+          <PhoneGrid category={category} city={city}/>
         </Grid>
       </Grid>
     </Container>
@@ -141,12 +142,4 @@ function FilterControls({defaultCategory, defaultCity}){
       data={{phonenumber, category:defaultCategory, city:defaultCity}}/>
     </React.Fragment>
   )
-}
-
-function PhoneList(){
-  return (
-    <Grid>
-      <Grid item xs>list</Grid>
-    </Grid>
-  );
 }

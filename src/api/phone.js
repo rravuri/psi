@@ -123,7 +123,7 @@ phone.get('/', requireUser, async (req, res)=>{
     const phoneRef=db().collection(PHONE_COLLECTION);
 
     let query=phoneRef;
-    if (status) {
+    if (vstatus) {
       query=query.where('vstatus','==',vstatus);
     }
     if (city) {
@@ -147,8 +147,13 @@ phone.get('/', requireUser, async (req, res)=>{
       query = query.startAfter(new db.Timestamp(offset,0))
       // query = query.startAfter(offset);
     }
-    const snapshot = await query.limit(limit).get();
+    const snapshot = await query.limit(limit+1).get();
     snapshot.forEach(doc => {
+      if (phonenumbers.length==limit){
+        res.setHeader('hasmoredata','true');
+        return;
+      }
+
       let r=doc.data();
       // r.createdAt=(new db.Timestamp(r.createdAt.seconds, r.createdAt.nanoseconds)).toDate();
       delete r.fromid;
